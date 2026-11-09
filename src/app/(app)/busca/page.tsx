@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
+import { DEMO_FOLDERS, demoAnnouncements, isDemo } from "@/lib/demo";
 
 function Mark({ text, q }: { text: string; q: string }) {
   if (!q) return <>{text}</>;
@@ -24,7 +25,14 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
   const tipo = t === "comunicados" || t === "arquivos" ? t : "tudo";
   const supabase = await createClient();
 
-  const [{ data: announcements }, { data: folders }] = q
+  const demo = await isDemo();
+  const ql = q.toLowerCase();
+  const [{ data: announcements }, { data: folders }] = demo
+    ? [
+        { data: q ? demoAnnouncements().filter((a) => `${a.title} ${a.summary} ${a.body}`.toLowerCase().includes(ql)) : [] },
+        { data: q ? DEMO_FOLDERS.filter((f) => `${f.name} ${f.description}`.toLowerCase().includes(ql)) : [] },
+      ]
+    : q
     ? await Promise.all([
         supabase
           .from("announcements")
