@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
 import HeroCarousel from "@/components/HeroCarousel";
 import Calendar, { KIND_COLOR } from "@/components/Calendar";
+import { DEMO_FOLDERS, DEMO_STORES, demoAcked, demoAnnouncements, demoEvents, isDemo } from "@/lib/demo";
 
 const TZ = "America/Sao_Paulo";
 const MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -36,15 +37,22 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     supabase.from("profile_stores").select("stores(name)").eq("profile_id", profile.id),
   ]);
 
+  const demo = await isDemo();
+  const dAck = demo ? await demoAcked() : new Set<string>();
   const readMap = new Map((reads ?? []).map((r) => [r.announcement_id as string, r.acked_at as string | null]));
-  const list = announcements ?? [];
+  if (demo) for (const id of dAck) readMap.set(id, "demo");
+  const list = demo ? demoAnnouncements() : (announcements ?? []);
+  const evAll = demo ? demoEvents(today) : null;
+  const evMonth = demo ? evAll!.filter((e) => e.starts_on >= monthStart && e.starts_on <= monthEnd) : (events ?? []);
+  const evUpcoming = demo ? evAll!.filter((e) => e.starts_on >= today).slice(0, 4) : (upcoming ?? []);
+  const folderList = demo ? DEMO_FOLDERS : (folders ?? []);
   const pending = list.filter((a) => a.requires_ack && !readMap.get(a.id));
   const slides = list
     .filter((a) => a.featured)
     .slice(0, 5)
     .map((a) => ({ id: a.id, category: a.category, title: a.title, summary: a.summary ?? "", requires_ack: a.requires_ack, date: formatDate(a.publish_at) }));
   const latest = list.slice(0, 5);
-  const storeNames = (myStores ?? []).flatMap((r) => {
+  const storeNames = demo ? DEMO_STORES : (myStores ?? []).flatMap((r) => {
     const s = (r as unknown as { stores: { name: string } | { name: string }[] | null }).stores;
     return Array.isArray(s) ? s.map((x) => x.name) : s ? [s.name] : [];
   });
@@ -103,8 +111,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <h2>Pastas de arquivos</h2>
               <Link href="/arquivos">Abrir arquivos</Link>
             </div>
-            {(folders ?? []).length === 0 && <p className="muted" style={{ padding: "8px 0 16px" }}>Nenhuma pasta liberada ainda.</p>}
-            {(folders ?? []).map((f) => (
+            {folderList.length === 0 && <p className="muted" style={{ padding: "8px 0 16px" }}>Nenhuma pasta liberada ainda.</p>}
+            {folderList.map((f) => (
               <Link key={f.id} href={`/arquivos/${f.id}`} className="file">
                 <span className="file-ic">DIR</span>
                 <span className="news-txt">
@@ -117,14 +125,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
 
         <aside className="home-side">
-          <Calendar year={y} month={m - 1} today={today} events={events ?? []} />
+          <Calendar year={y} month={m - 1} today={today} events={evMonth} />
 
           <section className="panel">
             <div className="panel-head">
               <h2>Próximos eventos</h2>
             </div>
-            {(upcoming ?? []).length === 0 && <p className="muted" style={{ padding: "0 0 16px" }}>Nenhum evento marcado.</p>}
-            {(upcoming ?? []).map((e) => {
+            {evUpcoming.length === 0 && <p className="muted" style={{ padding: "0 0 16px" }}>Nenhum evento marcado.</p>}
+            {evUpcoming.map((e) => {
               const [, mm, dd] = e.starts_on.split("-").map(Number);
               return (
                 <div key={e.id} className="ev-row">
