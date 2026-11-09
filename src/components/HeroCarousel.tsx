@@ -85,7 +85,6 @@ export default function HeroCarousel({ slides }: { slides: Slide[] }) {
           <p>Quando a gerência publicar um aviso em destaque, ele aparece aqui.</p>
         </div>
       )}
-      <span aria-hidden="true" onMouseEnter={() => setPaused(true)} />
     </section>
   );
 }
