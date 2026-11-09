@@ -3,6 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatDateTime, UUID_RE } from "@/lib/format";
 import { confirmRead } from "./[id]/actions";
+import { demoAcked, demoAnnouncements, isDemo } from "@/lib/demo";
 
 const FILTERS = [
   { key: "todos", label: "Todos" },
@@ -29,7 +30,9 @@ export default async function ComunicadosPage({
     supabase.from("announcement_reads").select("announcement_id, acked_at").eq("profile_id", profile.id),
   ]);
   const readMap = new Map((reads ?? []).map((r) => [r.announcement_id as string, r.acked_at as string | null]));
-  const all = announcements ?? [];
+  const demo = await isDemo();
+  if (demo) for (const id of await demoAcked()) readMap.set(id, "demo");
+  const all = demo ? demoAnnouncements() : (announcements ?? []);
 
   const list = all.filter((a) => {
     if (filter === "nao-lidos") return !readMap.has(a.id);
@@ -41,7 +44,7 @@ export default async function ComunicadosPage({
   const selected = list.find((a) => a.id === wanted) ?? all.find((a) => a.id === wanted) ?? list[0] ?? null;
 
   // Abrir um comunicado conta como lido.
-  if (selected && !readMap.has(selected.id)) {
+  if (!demo && selected && !readMap.has(selected.id)) {
     await supabase
       .from("announcement_reads")
       .upsert(
@@ -116,7 +119,7 @@ export default async function ComunicadosPage({
                 <div className="ack-box">
                   {ackedAt ? (
                     <p role="status">
-                      <span className="badge">Leitura confirmada em {formatDateTime(ackedAt)}</span>
+                      <span className="badge">Leitura confirmada{ackedAt !== "demo" ? ` em ${formatDateTime(ackedAt)}` : ""}</span>
                     </p>
                   ) : (
                     <form action={confirmRead}>
