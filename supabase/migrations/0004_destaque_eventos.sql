@@ -15,3 +15,4 @@ create index if not exists events_starts_on_idx on public.events (starts_on);
 alter table public.events enable row level security;
 create policy events_select on public.events for select to authenticated using (public.is_active_user());
 create policy events_admin_all on public.events for all to authenticated using (public.is_admin()) with check (public.is_admin());
+alter table public.events add column if not exists kind text not null default 'evento' check (kind in ('evento','prazo','feriado'));
