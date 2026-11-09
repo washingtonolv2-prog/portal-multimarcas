@@ -17,6 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="shell">
+      <a className="skip-link" href="#conteudo">
+        Pular para o conteúdo
+      </a>
       <Sidebar
         name={profile.full_name ?? "Usuário"}
         roleLabel={roleLabel(profile.role)}
@@ -36,7 +39,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </button>
           </form>
         </div>
-        <main>{children}</main>
+        <main id="conteudo" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );
