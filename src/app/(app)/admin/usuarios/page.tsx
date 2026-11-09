@@ -22,21 +22,24 @@ export default async function AdminUsuariosPage() {
   }
 
   return (
-    <>
+    <div className="page-wide">
+      <h1>Usuários</h1>
       <div className="row">
-        <h1>Usuários</h1>
+        <p className="muted">Quem acessa o portal e de quais lojas vê os comunicados e arquivos.</p>
         <Link className="btn" href="/admin/usuarios/novo">
           Novo usuário
         </Link>
       </div>
-      <div className="card">
+      <div className="card table-wrap">
         <table>
+          <caption className="sr-only">Lista de usuários do portal</caption>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Perfil</th>
-              <th>Lojas</th>
-              <th>Status</th>
+              <th scope="col">Pessoa</th>
+              <th scope="col">Perfil</th>
+              <th scope="col">Lojas</th>
+              <th scope="col">Situação</th>
+              <th scope="col" style={{ textAlign: "right" }}>Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -45,20 +48,30 @@ export default async function AdminUsuariosPage() {
               return (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/admin/usuarios/${p.id}`}>{p.full_name || p.email}</Link>
+                    <strong>{p.full_name || p.email}</strong>
                     <div className="muted">{p.email}</div>
                   </td>
-                  <td>{roleLabel(p.role)}</td>
-                  <td className="muted">
-                    {p.role === "loja" ? (userStores.length ? userStores.join(", ") : "Nenhuma") : "Todas"}
+                  <td>
+                    <span className={`badge${p.role === "admin" ? "" : " gray"}`}>{roleLabel(p.role)}</span>
                   </td>
-                  <td>{p.active ? <span className="badge">Ativo</span> : <span className="badge warn">Inativo</span>}</td>
+                  <td>{p.role === "loja" ? (userStores.length ? userStores.join(", ") : "Nenhuma") : "Todas"}</td>
+                  <td>
+                    <span className={`status ${p.active ? "ok" : "off"}`}>
+                      <span aria-hidden="true" className="dot" />
+                      {p.active ? "Ativo" : "Inativo"}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <Link href={`/admin/usuarios/${p.id}`} aria-label={`Editar ${p.full_name || p.email}`}>
+                      Editar
+                    </Link>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }
