@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatSize, UUID_RE } from "@/lib/format";
+import { DEMO_FOLDERS, demoFiles, isDemo } from "@/lib/demo";
 import {
   cleanRelativePath,
   DropboxError,
@@ -30,19 +31,26 @@ export default async function PastaPage({
   await requireProfile();
   const supabase = await createClient();
 
+  const demo = await isDemo();
   // RLS: se o usuario nao puder ver a pasta, nao volta nada.
-  const { data: folder } = await supabase
-    .from("library_folders")
-    .select("id, name, dropbox_folder_id")
-    .eq("id", folderId)
-    .eq("active", true)
-    .maybeSingle();
+  const { data: dbFolder } = demo
+    ? { data: null }
+    : await supabase
+        .from("library_folders")
+        .select("id, name, dropbox_folder_id")
+        .eq("id", folderId)
+        .eq("active", true)
+        .maybeSingle();
+  const demoFolder = demo ? DEMO_FOLDERS.find((f) => f.id === folderId) : undefined;
+  const folder = demoFolder ? { id: demoFolder.id, name: demoFolder.name, dropbox_folder_id: "" } : dbFolder;
   if (!folder) notFound();
 
   let entries: DropboxEntry[] = [];
   let errorMessage: string | null = null;
 
-  try {
+  if (demo) {
+    entries = demoFiles(folderId) as unknown as DropboxEntry[];
+  } else try {
     // A raiz e resolvida pelo ID a cada acesso: se mudarem/renomearem a pasta no Dropbox, continua funcionando.
     const root = await getMetadata(folder.dropbox_folder_id);
     if (root[".tag"] !== "folder") notFound();
@@ -117,7 +125,7 @@ export default async function PastaPage({
                 ) : (
                   <a
                     className="btn soft small"
-                    href={`/api/arquivos/download?folder=${folderId}&id=${encodeURIComponent(e.id)}`}
+                    href={demo ? "#" : `/api/arquivos/download?folder=${folderId}&id=${encodeURIComponent(e.id)}`}
                     aria-label={`Baixar ${e.name}`}
                   >
                     Baixar
