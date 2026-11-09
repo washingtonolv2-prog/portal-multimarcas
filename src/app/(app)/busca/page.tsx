@@ -3,11 +3,25 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
 
-export default async function BuscaPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+function Mark({ text, q }: { text: string; q: string }) {
+  if (!q) return <>{text}</>;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark>{text.slice(i, i + q.length)}</mark>
+      {text.slice(i + q.length)}
+    </>
+  );
+}
+
+export default async function BuscaPage({ searchParams }: { searchParams: Promise<{ q?: string; t?: string }> }) {
   await requireProfile();
-  const { q: raw } = await searchParams;
+  const { q: raw, t } = await searchParams;
   // Remove caracteres que têm significado no filtro do PostgREST.
   const q = (raw ?? "").replace(/[%,()*\\]/g, " ").trim().slice(0, 100);
+  const tipo = t === "comunicados" || t === "arquivos" ? t : "tudo";
   const supabase = await createClient();
 
   const [{ data: announcements }, { data: folders }] = q
@@ -27,49 +41,77 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
       ])
     : [{ data: [] }, { data: [] }];
 
-  const total = (announcements?.length ?? 0) + (folders?.length ?? 0);
+  const nc = announcements?.length ?? 0;
+  const na = folders?.length ?? 0;
+  const total = nc + na;
+  const tab = (key: string, label: string, n: number) => (
+    <Link
+      key={key}
+      href={`/busca?q=${encodeURIComponent(q)}${key !== "tudo" ? `&t=${key}` : ""}`}
+      className={`chip${tipo === key ? " on" : ""}`}
+      aria-current={tipo === key ? "true" : undefined}
+    >
+      {label} · {n}
+    </Link>
+  );
 
   return (
-    <>
-      <h1>Resultados da busca</h1>
-      {!q ? (
-        <p className="muted">Digite um termo na caixa de busca acima.</p>
-      ) : (
-        <p className="muted">
-          {total === 0 ? `Nada encontrado para “${q}”. Tente outra palavra.` : `${total} resultado(s) para “${q}”`}
-        </p>
+    <div className="page-wide">
+      <h1 aria-live="polite">
+        {!q ? "Buscar no portal" : total === 0 ? `Nada encontrado para “${q}”` : `${total} resultado${total > 1 ? "s" : ""} para “${q}”`}
+      </h1>
+      {!q && <p className="muted">Digite um termo na caixa de busca acima.</p>}
+      {q && total === 0 && <p className="muted">Confira a ortografia ou tente uma palavra mais simples.</p>}
+      {total > 0 && (
+        <nav aria-label="Filtrar resultados" className="chips">
+          {tab("tudo", "Tudo", total)}
+          {tab("comunicados", "Comunicados", nc)}
+          {tab("arquivos", "Arquivos", na)}
+        </nav>
       )}
 
-      {(announcements?.length ?? 0) > 0 && (
-        <>
-          <h2>Comunicados</h2>
-          <div className="list">
+      {nc > 0 && tipo !== "arquivos" && (
+        <section aria-labelledby="h-com" className="card result-sec">
+          <h2 id="h-com">Comunicados</h2>
+          <ul>
             {announcements!.map((a) => (
-              <Link key={a.id} href={`/comunicados/${a.id}`} className="card item">
-                <strong>{a.title}</strong>
-                <div className="muted">
-                  {a.category} · {formatDate(a.publish_at)}
-                </div>
-                {a.summary && <div>{a.summary}</div>}
-              </Link>
+              <li key={a.id}>
+                <Link href={`/comunicados?id=${a.id}`} className="result">
+                  <span className="muted">
+                    {formatDate(a.publish_at)} · {a.category}
+                  </span>
+                  <strong>
+                    <Mark text={a.title} q={q} />
+                  </strong>
+                  {a.summary && (
+                    <span>
+                      <Mark text={a.summary} q={q} />
+                    </span>
+                  )}
+                </Link>
+              </li>
             ))}
-          </div>
-        </>
+          </ul>
+        </section>
       )}
 
-      {(folders?.length ?? 0) > 0 && (
-        <>
-          <h2>Pastas de arquivos</h2>
-          <div className="list">
+      {na > 0 && tipo !== "comunicados" && (
+        <section aria-labelledby="h-arq" className="card result-sec">
+          <h2 id="h-arq">Arquivos</h2>
+          <ul>
             {folders!.map((f) => (
-              <Link key={f.id} href={`/arquivos/${f.id}`} className="card item">
-                <strong>{f.name}</strong>
-                {f.description && <div className="muted">{f.description}</div>}
-              </Link>
+              <li key={f.id}>
+                <Link href={`/arquivos/${f.id}`} className="result">
+                  <strong>
+                    <Mark text={f.name} q={q} />
+                  </strong>
+                  {f.description && <span className="muted">{f.description}</span>}
+                </Link>
+              </li>
             ))}
-          </div>
-        </>
+          </ul>
+        </section>
       )}
-    </>
+    </div>
   );
 }
