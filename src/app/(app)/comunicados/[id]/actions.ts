@@ -18,6 +18,6 @@ export async function confirmRead(formData: FormData) {
     .eq("profile_id", profile.id)
     .is("acked_at", null);
 
-  revalidatePath(`/comunicados/${id}`);
+  revalidatePath("/comunicados");
   revalidatePath("/");
 }
