@@ -13,11 +13,17 @@ function toIso(value: FormDataEntryValue | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+const CATEGORIES = ["Campanha", "Operação", "Preços", "Aviso"];
+
 export async function createAnnouncement(formData: FormData) {
   const admin = await requireAdmin();
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   if (!title || !body) redirect("/admin/comunicados/novo?erro=Preencha%20t%C3%ADtulo%20e%20mensagem.");
+
+  const category = String(formData.get("category") ?? "Aviso");
+  const summary = String(formData.get("summary") ?? "").trim().slice(0, 140);
+  const scheduled = toIso(formData.get("publish_at"));
 
   const supabase = await createClient();
   const { data: created, error } = await supabase
@@ -26,7 +32,10 @@ export async function createAnnouncement(formData: FormData) {
       title,
       body,
       requires_ack: formData.get("requires_ack") === "on",
-      publish_at: toIso(formData.get("publish_at")) ?? new Date().toISOString(),
+      category: CATEGORIES.includes(category) ? category : "Aviso",
+      summary: summary || null,
+      featured: formData.get("featured") === "on",
+      publish_at: scheduled ?? new Date().toISOString(),
       expires_at: toIso(formData.get("expires_at")),
       created_by: admin.id,
     })
@@ -40,5 +49,6 @@ export async function createAnnouncement(formData: FormData) {
       .from("announcement_stores")
       .insert(storeIds.map((store_id) => ({ announcement_id: created.id, store_id })));
   }
-  redirect("/admin/comunicados");
+  const future = scheduled && new Date(scheduled).getTime() > Date.now();
+  redirect(`/admin/comunicados?ok=${future ? "agendado" : "publicado"}&n=${storeIds.length}`);
 }

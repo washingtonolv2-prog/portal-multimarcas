@@ -1,27 +1,43 @@
-import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { roleLabel } from "@/lib/roles";
+import Sidebar from "@/components/Sidebar";
 import { signOut } from "../login/actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const [{ data: needAck }, { data: acked }] = await Promise.all([
+    supabase.from("announcements").select("id").eq("requires_ack", true),
+    supabase.from("announcement_reads").select("announcement_id").eq("profile_id", profile.id).not("acked_at", "is", null),
+  ]);
+  const done = new Set((acked ?? []).map((r) => r.announcement_id as string));
+  const pending = (needAck ?? []).filter((a) => !done.has(a.id as string)).length;
+
   return (
-    <>
-      <header className="top">
-        <span className="logo">Portal Multimarcas</span>
-        <nav>
-          <Link href="/">Início</Link>
-          <Link href="/comunicados">Comunicados</Link>
-          <Link href="/arquivos">Arquivos</Link>
-          {profile.role === "admin" && <Link href="/admin">Administração</Link>}
-        </nav>
-        <Link href="/conta">{profile.full_name}</Link>
-        <form action={signOut}>
-          <button className="link" type="submit">
-            Sair
-          </button>
-        </form>
-      </header>
-      <main>{children}</main>
-    </>
+    <div className="shell">
+      <Sidebar
+        name={profile.full_name ?? "Usuário"}
+        roleLabel={roleLabel(profile.role)}
+        isAdmin={profile.role === "admin"}
+        pending={pending}
+        signOut={signOut}
+      />
+      <div className="content">
+        <div className="topbar">
+          <form className="search" action="/busca" role="search">
+            <label className="sr-only" htmlFor="q">
+              Buscar no portal
+            </label>
+            <input id="q" type="search" name="q" placeholder="Buscar comunicados e arquivos" maxLength={100} autoComplete="off" />
+            <button className="btn" type="submit">
+              Buscar
+            </button>
+          </form>
+        </div>
+        <main>{children}</main>
+      </div>
+    </div>
   );
 }

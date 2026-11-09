@@ -10,7 +10,7 @@ export default async function ComunicadosPage() {
   const [{ data: announcements }, { data: reads }] = await Promise.all([
     supabase
       .from("announcements")
-      .select("id, title, requires_ack, publish_at")
+      .select("id, title, category, requires_ack, publish_at")
       .order("publish_at", { ascending: false })
       .limit(200),
     supabase.from("announcement_reads").select("announcement_id, acked_at").eq("profile_id", profile.id),
@@ -35,7 +35,7 @@ export default async function ComunicadosPage() {
                   <span className="badge">Novo</span>
                 ) : null}
               </div>
-              <div className="muted">{formatDate(a.publish_at)}</div>
+              <div className="muted">{a.category} · {formatDate(a.publish_at)}</div>
             </Link>
           );
         })}

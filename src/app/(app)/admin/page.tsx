@@ -11,6 +11,10 @@ export default async function AdminPage() {
           <strong>Comunicados</strong>
           <div className="muted">Publicar e acompanhar leituras e confirmações</div>
         </Link>
+        <Link href="/admin/eventos" className="card item">
+          <strong>Calendário</strong>
+          <div className="muted">Eventos que aparecem no calendário da página inicial</div>
+        </Link>
         <Link href="/admin/pastas" className="card item">
           <strong>Pastas de arquivos</strong>
           <div className="muted">Ligar pastas do Dropbox ao portal e escolher quais lojas veem cada uma</div>
