@@ -17,10 +17,11 @@ export default async function PastaPage({
   searchParams,
 }: {
   params: Promise<{ folderId: string }>;
-  searchParams: Promise<{ p?: string }>;
+  searchParams: Promise<{ p?: string; q?: string }>;
 }) {
   const { folderId } = await params;
-  const { p } = await searchParams;
+  const { p, q: rawQ } = await searchParams;
+  const q = (rawQ ?? "").trim().slice(0, 100).toLowerCase();
   if (!UUID_RE.test(folderId)) notFound();
 
   const segments = cleanRelativePath(p);
@@ -58,53 +59,74 @@ export default async function PastaPage({
     errorMessage = "Não foi possível carregar os arquivos agora. Tente novamente em instantes.";
   }
 
+  const shown = q ? entries.filter((e) => e.name.toLowerCase().includes(q)) : entries;
+  const ext = (n: string) => (n.includes(".") ? n.split(".").pop()!.slice(0, 4).toUpperCase() : "ARQ");
   const hrefFor = (segs: string[]) =>
     segs.length ? `/arquivos/${folderId}?p=${encodeURIComponent(segs.join("/"))}` : `/arquivos/${folderId}`;
 
   return (
     <>
-      <p className="crumbs">
+      <nav aria-label="Caminho" className="crumbs">
         <Link href="/arquivos">Arquivos</Link> / <Link href={hrefFor([])}>{folder.name}</Link>
         {segments.map((s, i) => (
           <span key={i}>
             {" / "}
-            <Link href={hrefFor(segments.slice(0, i + 1))}>{s}</Link>
+            <Link href={hrefFor(segments.slice(0, i + 1))} aria-current={i === segments.length - 1 ? "page" : undefined}>
+              {s}
+            </Link>
           </span>
         ))}
-      </p>
+      </nav>
+      <div className="row">
+        <h2 className="art-title">{segments.length ? segments[segments.length - 1] : folder.name}</h2>
+        <form role="search" className="folder-search" action={`/arquivos/${folderId}`}>
+          {segments.length > 0 && <input type="hidden" name="p" value={segments.join("/")} />}
+          <label className="sr-only" htmlFor="fq">Buscar nesta pasta</label>
+          <input id="fq" type="search" name="q" defaultValue={rawQ ?? ""} placeholder="Buscar nesta pasta" maxLength={100} />
+        </form>
+      </div>
 
-      {errorMessage && <div className="error">{errorMessage}</div>}
+      {errorMessage && <div className="error" role="alert">{errorMessage}</div>}
       {!errorMessage && entries.length === 0 && <p className="muted">Pasta vazia.</p>}
+      {!errorMessage && entries.length > 0 && shown.length === 0 && (
+        <p className="muted" role="status">Nenhum arquivo com “{q}” nesta pasta.</p>
+      )}
 
-      {entries.length > 0 && (
-        <div className="card">
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Tamanho</th>
-                <th>Atualizado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id}>
-                  <td>
-                    {e[".tag"] === "folder" ? (
-                      <Link href={hrefFor([...segments, e.name])}>📁 {e.name}</Link>
-                    ) : (
-                      <a href={`/api/arquivos/download?folder=${folderId}&id=${encodeURIComponent(e.id)}`}>
-                        📄 {e.name}
-                      </a>
-                    )}
-                  </td>
-                  <td className="muted">{formatSize(e.size)}</td>
-                  <td className="muted">{formatDateTime(e.server_modified)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {shown.length > 0 && (
+        <ul className="file-rows">
+          {shown.map((e) => {
+            const isFolder = e[".tag"] === "folder";
+            return (
+              <li key={e.id} className="file-row">
+                <span className={`type-badge${isFolder ? " folder" : ""}`} aria-hidden="true">
+                  {isFolder ? "PASTA" : ext(e.name)}
+                </span>
+                <span className="file-info">
+                  <strong>{e.name}</strong>
+                  {!isFolder && (
+                    <span className="muted">
+                      Atualizado {formatDateTime(e.server_modified)}
+                      {e.size !== undefined ? ` · ${formatSize(e.size)}` : ""}
+                    </span>
+                  )}
+                </span>
+                {isFolder ? (
+                  <Link className="btn secondary small" href={hrefFor([...segments, e.name])} aria-label={`Abrir pasta ${e.name}`}>
+                    Abrir
+                  </Link>
+                ) : (
+                  <a
+                    className="btn soft small"
+                    href={`/api/arquivos/download?folder=${folderId}&id=${encodeURIComponent(e.id)}`}
+                    aria-label={`Baixar ${e.name}`}
+                  >
+                    Baixar
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </>
   );
