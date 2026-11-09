@@ -1,0 +1,36 @@
+/* ---------- Transições e animações ---------- */
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+main { animation: fade-in .25s ease-out backwards; }
+.page-anim { animation: fade-up .35s cubic-bezier(.2,.7,.2,1) backwards; }
+
+/* entrada escalonada de listas e painéis */
+.cards li, .file-rows li, .result-sec li, .news, .panel, .cal-card, .ack-banner, .hero, .split-detail { animation: fade-up .4s cubic-bezier(.2,.7,.2,1) backwards; }
+.cards li:nth-child(2), .file-rows li:nth-child(2), .news:nth-of-type(2), .panel:nth-child(2) { animation-delay: .05s; }
+.cards li:nth-child(3), .file-rows li:nth-child(3), .news:nth-of-type(3) { animation-delay: .1s; }
+.cards li:nth-child(4), .file-rows li:nth-child(4), .news:nth-of-type(4) { animation-delay: .15s; }
+.cards li:nth-child(n+5), .file-rows li:nth-child(n+5), .news:nth-of-type(n+5) { animation-delay: .2s; }
+.split-detail { animation-delay: .08s; }
+
+/* interações suaves */
+a, button, .chip, .com-card, .result, .news, .file, .folder-nav a, .nav a, .icon-btn, .btn, input, select, textarea, .cal-nav {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease, opacity .18s ease;
+}
+.com-card:hover, .news:hover, .file:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(19, 69, 54, .08); }
+.btn:active, .chip:active, .icon-btn:active, button:active { transform: scale(.97); }
+.side { transition: width .25s ease, padding .25s ease; }
+.hero { transition: background .7s ease; }
+.hero-body { animation: fade-up .5s ease-out backwards; }
+
+/* esqueleto de carregamento */
+.skel { border-radius: 12px; background: linear-gradient(90deg, #e8ebe5 25%, #f4f6f1 37%, #e8ebe5 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; }
+.skel-line { height: 14px; border-radius: 7px; }
+.skel-wrap { display: flex; flex-direction: column; gap: 16px; max-width: 1200px; margin: 0 auto; }
+.skel-cols { display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 24px; }
+@media (max-width: 900px) { .skel-cols { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
