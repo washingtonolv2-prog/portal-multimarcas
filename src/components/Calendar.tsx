@@ -1,48 +1,61 @@
-const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
+import Link from "next/link";
 
-export type CalEvent = { id: string; title: string; starts_on: string };
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
+export const KIND_COLOR: Record<string, string> = { evento: "#1B5E47", prazo: "#B3641A", feriado: "#3F6FBF" };
+export type CalEvent = { id: string; title: string; starts_on: string; kind: string };
 
 export default function Calendar({ year, month, today, events }: { year: number; month: number; today: string; events: CalEvent[] }) {
-  const first = new Date(Date.UTC(year, month, 1));
-  const lead = first.getUTCDay();
+  const lead = new Date(Date.UTC(year, month, 1)).getUTCDay();
   const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const withEv = new Set(events.map((e) => e.starts_on));
-  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, k) => k + 1)];
-  while (cells.length % 7) cells.push(null);
-  const rows: (number | null)[][] = [];
-  for (let r = 0; r < cells.length; r += 7) rows.push(cells.slice(r, r + 7));
   const iso = (d: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const byDay = new Map<string, CalEvent>();
+  for (const e of events) if (!byDay.has(e.starts_on)) byDay.set(e.starts_on, e);
+  const prev = new Date(Date.UTC(year, month - 1, 1));
+  const next = new Date(Date.UTC(year, month + 1, 1));
+  const q = (d: Date) => `/?mes=${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 
   return (
-    <table className="cal" aria-label={`Calendário de ${MESES[month]} de ${year}`}>
-      <caption style={{ textAlign: "left", fontWeight: 700, padding: "0 0 8px", textTransform: "capitalize" }}>
-        {MESES[month]} de {year}
-      </caption>
-      <thead>
-        <tr>
-          {DIAS.map((d, n) => (
-            <th key={n} scope="col">
-              {d}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, n) => (
-          <tr key={n}>
-            {r.map((d, k) => (
-              <td key={k}>
-                {d && (
-                  <span className={`day${iso(d) === today ? " today" : ""}${withEv.has(iso(d)) ? " ev" : ""}`} aria-label={`${d}${withEv.has(iso(d)) ? ", com evento" : ""}${iso(d) === today ? ", hoje" : ""}`}>
-                    {d}
-                  </span>
-                )}
-              </td>
-            ))}
-          </tr>
+    <section className="cal-card" aria-label={`Calendário de ${MESES[month].toLowerCase()} de ${year}`}>
+      <div className="cal-head">
+        <h2>
+          {MESES[month]} {year}
+        </h2>
+        <div>
+          <Link className="cal-nav" href={q(prev)} aria-label="Mês anterior">
+            ‹
+          </Link>
+          <Link className="cal-nav" href={q(next)} aria-label="Próximo mês">
+            ›
+          </Link>
+        </div>
+      </div>
+      <div className="cal-grid">
+        {DIAS.map((d, k) => (
+          <span key={k} className="cal-dow" aria-hidden="true">
+            {d}
+          </span>
         ))}
-      </tbody>
-    </table>
+        {Array.from({ length: lead }, (_, k) => (
+          <div key={`e${k}`} />
+        ))}
+        {Array.from({ length: days }, (_, k) => {
+          const d = k + 1;
+          const ev = byDay.get(iso(d));
+          const isToday = iso(d) === today;
+          return (
+            <div key={d} className={`cal-day${isToday ? " today" : ""}`} aria-label={`${d}${ev ? `, ${ev.title}` : ""}${isToday ? ", hoje" : ""}`}>
+              <span>{d}</span>
+              {ev && <i style={{ background: isToday ? "#fff" : KIND_COLOR[ev.kind] ?? KIND_COLOR.evento }} />}
+            </div>
+          );
+        })}
+      </div>
+      <div className="cal-legend">
+        <span><i style={{ background: KIND_COLOR.evento }} />Evento da empresa</span>
+        <span><i style={{ background: KIND_COLOR.prazo }} />Prazo ou atenção</span>
+        <span><i style={{ background: KIND_COLOR.feriado }} />Feriado</span>
+      </div>
+    </section>
   );
 }
