@@ -1,0 +1,5 @@
+/* ---------- Modo demonstração ---------- */
+.demo-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 24px; background: var(--warn-bg); color: var(--warn); border-bottom: 1px solid #ecd49f; font-size: .9rem; }
+.demo-banner form { margin-left: auto; }
+.demo-banner button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--warn); background: #fff; color: var(--warn); font: inherit; font-weight: 600; cursor: pointer; }
+.topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
