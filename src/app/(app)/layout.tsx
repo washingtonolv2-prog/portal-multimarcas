@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/arquivos">Arquivos</Link>
           {profile.role === "admin" && <Link href="/admin">Administração</Link>}
         </nav>
-        <span>{profile.full_name}</span>
+        <Link href="/conta">{profile.full_name}</Link>
         <form action={signOut}>
           <button className="link" type="submit">
             Sair

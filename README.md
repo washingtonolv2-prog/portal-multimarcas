@@ -7,9 +7,10 @@ Portal interno de comunicação e arquivos para as lojas. Next.js 16 + Supabase 
 ## 1. Supabase
 
 1. Crie um projeto (ou use um existente).
-2. No SQL Editor, rode `supabase/migrations/0001_init.sql`.
+2. No SQL Editor, rode `supabase/migrations/0001_init.sql` e depois `supabase/migrations/0002_profiles_email.sql`.
 3. **Authentication > Providers > Email:** desative "Allow new users to sign up". Os usuários são convidados por você (Authentication > Users > Invite user).
 4. Copie `Project URL` e `anon key` (Project Settings > API) para o `.env.local`.
+5. Copie também a `service_role key` para `SUPABASE_SERVICE_ROLE_KEY` (**secreta**: só no servidor/Vercel, nunca no navegador). Ela é usada apenas em Administração > Usuários, para criar usuários e redefinir senhas.
 
 ### Primeiro administrador
 
@@ -19,15 +20,12 @@ Convide seu e-mail em Authentication > Users e rode no SQL Editor:
 update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'SEU@EMAIL');
 ```
 
-### Ligar usuários às lojas
+### Usuários e lojas (pelo portal)
 
-Cadastre as lojas em **Administração > Lojas** e vincule cada usuário (por enquanto, via SQL):
+Depois do primeiro administrador, tudo é feito em **Administração**:
 
-```sql
-insert into public.profile_stores (profile_id, store_id)
-select u.id, s.id from auth.users u, public.stores s
-where u.email = 'gerente@loja.com' and s.name = 'Tijuca';
-```
+- **Lojas:** cadastre as lojas.
+- **Usuários:** crie o usuário com uma senha temporária, escolha o perfil e as lojas. Dá para ativar/desativar, trocar perfil e lojas e redefinir a senha. Cada pessoa troca a própria senha em **Minha conta** (clique no seu nome no topo).
 
 Perfis: `admin` (publica e administra), `supervisor` (vê tudo, não edita), `loja` (vê só o que é das suas lojas).
 
@@ -79,10 +77,12 @@ Deploy: importe o repositório na Vercel e configure as mesmas variáveis de amb
 - O download aceita só IDs do Dropbox, confirma que o arquivo está dentro da pasta liberada e registra quem baixou.
 - O app do Dropbox só tem escopos de leitura: o portal não consegue apagar nem mover arquivos.
 - Comunicados são exibidos como texto puro (sem HTML).
+- A `SUPABASE_SERVICE_ROLE_KEY` só é usada em ações protegidas por `requireAdmin()` e o módulo é marcado `server-only`.
+- O administrador não consegue desativar nem rebaixar a si mesmo (evita ficar sem acesso).
 
 ## Próximos passos sugeridos
 
-- Tela de administração de usuários (convidar, ativar/desativar, vincular a lojas).
+- Convite por e-mail com link para a própria pessoa definir a senha (hoje a senha temporária é passada por você).
 - Cache da listagem do Dropbox e atualização por webhook.
 - Busca única em comunicados e arquivos.
 - Notificações (e-mail/WhatsApp) para comunicados urgentes.

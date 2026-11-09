@@ -15,6 +15,10 @@ export default async function AdminPage() {
           <strong>Pastas de arquivos</strong>
           <div className="muted">Ligar pastas do Dropbox ao portal e escolher quais lojas veem cada uma</div>
         </Link>
+        <Link href="/admin/usuarios" className="card item">
+          <strong>Usuários</strong>
+          <div className="muted">Criar usuários, definir perfil e lojas, ativar/desativar e redefinir senha</div>
+        </Link>
         <Link href="/admin/lojas" className="card item">
           <strong>Lojas</strong>
           <div className="muted">Cadastrar lojas</div>
