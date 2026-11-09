@@ -7,7 +7,7 @@ export default async function EventosPage({ searchParams }: { searchParams: Prom
   const { erro } = await searchParams;
   const supabase = await createClient();
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
-  const { data: events } = await supabase.from("events").select("id, title, starts_on").gte("starts_on", today).order("starts_on");
+  const { data: events } = await supabase.from("events").select("id, title, starts_on, kind").gte("starts_on", today).order("starts_on");
 
   return (
     <>
@@ -22,6 +22,14 @@ export default async function EventosPage({ searchParams }: { searchParams: Prom
         <label>
           Data
           <input type="date" name="starts_on" min={today} required />
+        </label>
+        <label>
+          Tipo
+          <select name="kind" defaultValue="evento">
+            <option value="evento">Evento da empresa</option>
+            <option value="prazo">Prazo ou atenção</option>
+            <option value="feriado">Feriado</option>
+          </select>
         </label>
         <div>
           <button className="btn" type="submit">
