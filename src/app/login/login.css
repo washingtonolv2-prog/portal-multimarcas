@@ -1,0 +1,17 @@
+.lg { display: flex; flex-wrap: wrap; min-height: 100vh; background: #f3f4f0; }
+.lg-hero { flex: 1 1 480px; background: #1b5e47; color: #fff; padding: 72px 72px 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 48px; }
+.lg-brand { display: flex; align-items: center; gap: 12px; font-family: "Space Grotesk", Inter, sans-serif; font-weight: 600; font-size: 20px; }
+.lg-brand span { width: 36px; height: 36px; border-radius: 10px; background: #fff; color: #1b5e47; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.lg-hero h1 { margin: 0; font-family: "Space Grotesk", Inter, sans-serif; font-weight: 700; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em; max-width: 460px; }
+.lg-hero p { margin: 24px 0 0; font-size: 18px; line-height: 1.5; color: #e3f0ea; max-width: 460px; }
+.lg-hero ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; font-size: 15px; color: #e3f0ea; }
+.lg-hero li { display: flex; align-items: center; gap: 12px; }
+.lg-side { flex: 1 1 480px; display: flex; align-items: center; justify-content: center; padding: 48px 32px; }
+.lg-form { width: 100%; max-width: 400px; background: #fff; border: 1px solid #dde1da; border-radius: 16px; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
+.lg-form h2 { margin: 0; font-family: "Space Grotesk", Inter, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+.lg-form .sub { margin: 6px 0 0; font-size: 14px; color: #5b665f; }
+.lg-form .foot { margin: 0; font-size: 13px; color: #5b665f; text-align: center; }
+.lg-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+.lg-form input { font: inherit; font-weight: 400; height: 48px; padding: 0 14px; border: 1px solid #c5cbc3; border-radius: 10px; background: #fff; color: #16211b; width: 100%; }
+.lg-form button { width: 100%; }
+@media (max-width: 760px) { .lg-hero { padding: 32px 24px; gap: 24px; } .lg-hero h1 { font-size: 32px; } .lg-hero ul { display: none; } }
